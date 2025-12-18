@@ -669,6 +669,7 @@
   </style>
 </head>
 <body>
+  <audio id="bgm" src="music.mp3" preload="auto" loop></audio>
   <div class="snowHost" id="snowHost"></div>
 
   <div class="wrap">
@@ -1285,116 +1286,27 @@ Einen ganz dicken Kuss </p>
       }
     }
 
-    const music = {
-      ctx: null,
-      gain: null,
-      timers: [],
-      running: false
-    };
+const bgm = document.getElementById("bgm")
 
-    function clearMusicTimers(){
-      while(music.timers.length){
-        window.clearTimeout(music.timers.pop());
-      }
-    }
+function startMusic(){
+bgm.play().catch(() => {})
+}
 
-    function ensureAudio(){
-      if(music.ctx) return;
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if(!AudioCtx) return;
-      music.ctx = new AudioCtx();
-      music.gain = music.ctx.createGain();
-      music.gain.gain.value = 0.06;
-      music.gain.connect(music.ctx.destination);
-    }
+function stopMusic(){
+bgm.pause()
+bgm.currentTime = 0
+}
 
-    function noteFreq(name){
-      const map = {
-        "C4":261.63, "D4":293.66, "E4":329.63, "F4":349.23, "G4":392.00, "A4":440.00, "B4":493.88,
-        "C5":523.25, "D5":587.33, "E5":659.25, "F5":698.46, "G5":783.99, "A5":880.00
-      };
-      return map[name] || 440;
-    }
-
-    function playTone(freq, ms){
-      if(!music.ctx || !music.gain) return;
-
-      const o = music.ctx.createOscillator();
-      const g = music.ctx.createGain();
-
-      o.type = "sine";
-      o.frequency.value = freq;
-
-      const now = music.ctx.currentTime;
-      g.gain.setValueAtTime(0.0001, now);
-      g.gain.exponentialRampToValueAtTime(0.9, now + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + (ms/1000));
-
-      o.connect(g);
-      g.connect(music.gain);
-
-      o.start(now);
-      o.stop(now + (ms/1000) + 0.03);
-    }
-
-    const jingle = [
-      ["E5", 220], ["E5", 220], ["E5", 420],
-      ["E5", 220], ["E5", 220], ["E5", 420],
-      ["E5", 220], ["G5", 220], ["C5", 220], ["D5", 220], ["E5", 520],
-      ["F5", 220], ["F5", 220], ["F5", 220], ["F5", 220],
-      ["F5", 220], ["E5", 220], ["E5", 220], ["E5", 220],
-      ["E5", 220], ["D5", 220], ["D5", 220], ["E5", 220], ["D5", 420], ["G5", 420]
-    ];
-
-    function startMusic(){
-      ensureAudio();
-      if(!music.ctx) return;
-
-      if(music.ctx.state === "suspended"){
-        music.ctx.resume().catch(() => {});
-      }
-
-      music.running = true;
-      clearMusicTimers();
-
-      const loop = () => {
-        if(!music.running) return;
-
-        let t = 0;
-        for(const [n, ms] of jingle){
-          const timer = window.setTimeout(() => {
-            if(!music.running) return;
-            playTone(noteFreq(n), ms);
-          }, t);
-          music.timers.push(timer);
-          t += ms + 30;
-        }
-
-        const timer2 = window.setTimeout(() => {
-          loop();
-        }, t + 360);
-        music.timers.push(timer2);
-      };
-
-      loop();
-    }
-
-    function stopMusic(){
-      music.running = false;
-      clearMusicTimers();
-    }
-
-    function toggleMusic(){
-      state.musicOn = !state.musicOn;
-      save();
-      setMusicButton();
-      if(state.musicOn){
-        startMusic();
-      }else{
-        stopMusic();
-      }
-    }
-
+function toggleMusic(){
+state.musicOn = !state.musicOn
+save()
+setMusicButton()
+if(state.musicOn){
+startMusic()
+}else{
+stopMusic()
+}
+}
     els.cells.forEach((c) => {
       c.addEventListener("click", () => onCellClick(Number(c.dataset.i)));
     });
